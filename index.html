@@ -1,0 +1,2391 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
+    <title>上海文物分布地图 | 高级版</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://api.map.baidu.com/api?v=3.0&ak=uSVObT5aXV4D65K4nETyxQsWiYfe1guu"></script>
+    <style>
+		#openBaiduMap {
+    cursor: pointer;
+    background: rgba(74, 131, 227, 0.15);
+    color: #4a83e3;
+    border: 1px solid rgba(74, 131, 227, 0.2);
+}
+
+#openBaiduMap:hover {
+    background: rgba(74, 131, 227, 0.25);
+    transform: translateY(-2px);
+}
+		
+ /* 修改文物图片样式 */
+    .heritage-image {
+            width: 100px;
+            height: 100px;
+            border-radius: 12px;
+            object-fit: cover;
+            margin-right: 20px;
+            background: linear-gradient(45deg, var(--primary), var(--primary-light));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+            text-align: center;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .heritage-image.fallback {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .heritage-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        :root {
+            --primary: #1a2a6c;
+            --primary-dark: #0d1a4d;
+            --primary-light: #2a5298;
+            --accent: #d4af37;
+            --accent-light: #e8c86a;
+            --light: #f8f7f4;
+            --dark: #121212;
+            --gray: #6c757d;
+            --success: #28a745;
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            color: var(--light);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        
+        /* 头部样式 */
+        .header {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary-light));
+            padding: 30px 50px;
+            color: var(--light);
+            position: relative;
+            overflow: hidden;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .header::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('https://images.unsplash.com/photo-1503387762-592deb58ef4e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1931&q=80') center/cover;
+            opacity: 0.1;
+            filter: grayscale(100%);
+        }
+        
+        .header-content {
+            position: relative;
+            z-index: 10;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header h1 {
+            font-size: 2.8rem;
+            margin-bottom: 15px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .header h1 i {
+            color: var(--accent);
+            font-size: 2.5rem;
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            max-width: 800px;
+            opacity: 0.85;
+            margin-bottom: 30px;
+            line-height: 1.8;
+        }
+        
+        .search-container {
+            position: relative;
+            max-width: 700px;
+            margin-bottom: 20px;
+        }
+        
+        .search-box {
+            display: flex;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 5px 5px 5px 25px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .search-box:hover {
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .search-box input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            outline: none;
+            padding: 12px 15px;
+            font-size: 18px;
+            color: white;
+            font-weight: 500;
+        }
+        
+        .search-box input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .search-box button {
+            background: var(--accent);
+            border: none;
+            color: var(--dark);
+            font-size: 20px;
+            cursor: pointer;
+            width: 60px;
+            transition: all 0.3s ease;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .search-box button:hover {
+            background: var(--accent-light);
+            transform: scale(1.05);
+        }
+        
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: rgba(26, 42, 108, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            margin-top: 15px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+            max-height: 400px;
+            overflow-y: auto;
+            z-index: 300;
+            display: none;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .search-results.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .search-result-item {
+            padding: 15px 25px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        
+        .search-result-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .search-result-item img {
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            object-fit: cover;
+            margin-right: 20px;
+            background: var(--primary-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .search-result-item h4 {
+            color: var(--light);
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        .search-result-item p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .no-results {
+            padding: 25px;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+            font-style: italic;
+            font-size: 1.1rem;
+        }
+        
+        .stats {
+            display: flex;
+            gap: 30px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .stat-item {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 20px 30px;
+            border-radius: 16px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            min-width: 180px;
+            transition: all 0.3s ease;
+        }
+        
+        .stat-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            background: rgba(255, 255, 255, 0.12);
+        }
+        
+        .stat-item .number {
+            font-size: 2.8rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .stat-item .number i {
+            font-size: 2rem;
+        }
+        
+        .stat-item .label {
+            font-size: 1.05rem;
+            opacity: 0.85;
+            letter-spacing: 0.5px;
+        }
+        
+        /* 主体内容区 */
+        .main-content {
+            display: flex;
+            min-height: 700px;
+        }
+        
+        /* 文物列表 */
+        .heritage-list {
+            width: 380px;
+            background: rgba(248, 249, 250, 0.03);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            overflow-y: auto;
+            padding: 30px;
+            position: relative;
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent) rgba(255, 255, 255, 0.05);
+        }
+        
+        /* 自定义垂直滚动条 */
+        .heritage-list::-webkit-scrollbar {
+            width: 10px;
+        }
+        
+        .heritage-list::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+        }
+        
+        .heritage-list::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 5px;
+        }
+        
+        .heritage-list::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-light);
+        }
+        
+        .list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        
+        .list-header h2 {
+	font-size: 1.6rem;
+	color: var(--light);
+	font-weight: 600;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+        }
+        
+        .list-header h2 i {
+            color: var(--accent);
+        }
+        
+        .list-header span {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .list-header span i {
+            color: var(--accent);
+        }
+        
+        /* 核心文物导航条容器 */
+        .core-heritage-container {
+            background: linear-gradient(135deg, rgba(74, 111, 197, 0.4), rgba(26, 42, 108, 0.6));
+            border-radius: 16px;
+            padding: 20px;
+            margin: 15px 0 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+        }
+        
+        .core-heritage-container h3 {
+            color: var(--light);
+            margin-bottom: 15px;
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .core-heritage-container h3 i {
+            color: var(--accent);
+        }
+        
+        /* 核心文物导航条 */
+        .core-heritage-carousel {
+            position: relative;
+            overflow: hidden;
+            border-radius: 12px;
+        }
+        
+        .core-heritage-scroll {
+            display: flex;
+            gap: 12px;
+            padding: 10px 0;
+            overflow-x: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent) var(--primary);
+            scroll-behavior: smooth;
+            padding-bottom: 8px;
+        }
+        
+        .core-heritage-scroll::-webkit-scrollbar {
+            height: 6px;
+        }
+        
+        .core-heritage-scroll::-webkit-scrollbar-track {
+            background: var(--primary);
+            border-radius: 3px;
+        }
+        
+        .core-heritage-scroll::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 3px;
+        }
+        
+        .core-heritage-scroll::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-light);
+        }
+        
+        .core-heritage-btn {
+            padding: 12px 25px;
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 30px;
+            font-size: 15px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            min-width: 120px;
+            gap: 10px;
+        }
+        
+        .core-heritage-btn i {
+            color: var(--accent);
+        }
+        
+        .core-heritage-btn.active, .core-heritage-btn:hover {
+            background: rgba(212, 175, 55, 0.25);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
+            border-color: rgba(212, 175, 55, 0.3);
+        }
+        
+        /* 区域导航条容器 */
+        .independent-carousel-container {
+            background: rgba(238, 242, 255, 0.05);
+            border-radius: 16px;
+            padding: 20px;
+            margin: 0 0 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(5px);
+        }
+        
+        .independent-carousel-container h3 {
+            color: var(--light);
+            margin-bottom: 15px;
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .independent-carousel-container h3 i {
+            color: var(--accent);
+        }
+        
+        /* 独立地点滑动条 */
+        .independent-carousel {
+            position: relative;
+            overflow: hidden;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px 0;
+        }
+        
+        .independent-area-scroll {
+            display: flex;
+            gap: 12px;
+            padding: 0 12px;
+            overflow-x: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent) rgba(255, 255, 255, 0.05);
+            scroll-behavior: smooth;
+            padding-bottom: 8px;
+        }
+        
+        .independent-area-scroll::-webkit-scrollbar {
+            height: 6px;
+        }
+        
+        .independent-area-scroll::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+        }
+        
+        .independent-area-scroll::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 3px;
+        }
+        
+        .independent-area-scroll::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-light);
+        }
+        
+        .independent-area-btn {
+            padding: 10px 22px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 30px;
+            font-size: 15px;
+            color: var(--light);
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        
+        .independent-area-btn.active, .independent-area-btn:hover {
+            background: var(--accent);
+            color: var(--dark);
+            font-weight: 600;
+            transform: translateY(-2px);
+        }
+        
+        .independent-nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 36px;
+            height: 36px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
+            z-index: 10;
+            transition: all 0.3s;
+            color: var(--light);
+        }
+        
+        .independent-nav-btn:hover {
+            background: var(--accent);
+            color: var(--dark);
+            border-color: var(--accent);
+            transform: translateY(-50%) scale(1.1);
+        }
+        
+        .independent-nav-btn.left {
+            left: 8px;
+        }
+        
+        .independent-nav-btn.right {
+            right: 8px;
+        }
+        
+        .independent-nav-btn i {
+            font-size: 16px;
+        }
+        
+        .filter-options {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-btn {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 30px;
+            font-size: 15px;
+            color: var(--light);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .filter-btn.active, .filter-btn:hover {
+            background: var(--accent);
+            color: var(--dark);
+            font-weight: 600;
+        }
+        
+        .heritage-item {
+            display: flex;
+            padding: 20px;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            border-left: 4px solid var(--accent);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        
+        .heritage-item:hover, .heritage-item.active {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(26, 42, 108, 0.25);
+            background: rgba(255, 255, 255, 0.08);
+            border-left: 4px solid var(--accent-light);
+        }
+        
+        .heritage-image {
+            width: 100px;
+            height: 100px;
+            border-radius: 12px;
+            object-fit: cover;
+            margin-right: 20px;
+            background: linear-gradient(45deg, var(--primary), var(--primary-light));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+            text-align: center;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .heritage-image::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(26,42,108,0.6), rgba(42,82,152,0.6));
+            opacity: 0.8;
+        }
+        
+        .heritage-info {
+            flex: 1;
+        }
+        
+        .heritage-info h3 {
+            font-size: 1.25rem;
+            margin-bottom: 10px;
+            color: var(--light);
+            font-weight: 600;
+        }
+        
+        .heritage-info p {
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.75);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+        
+        .heritage-meta {
+            display: flex;
+            gap: 12px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .meta-tag {
+            background: rgba(212, 175, 55, 0.15);
+            color: var(--accent);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            border: 1px solid rgba(212, 175, 55, 0.2);
+        }
+        
+        /* 地图容器 */
+        .map-container {
+            flex: 1;
+            position: relative;
+            background: rgba(0, 0, 0, 0.1);
+        }
+        
+        #map {
+            width: 100%;
+            height: 100%;
+            background: #0a142e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--light);
+        }
+        
+        /* 详情卡片 */
+        .detail-card {
+            position: absolute;
+            bottom: 40px;
+            left: 40px;
+            right: 40px;
+            background: rgba(26, 42, 108, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.35);
+            transform: translateY(120%);
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 200;
+            max-width: 900px;
+            margin: 0 auto;
+            display: none;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+			<div class="meta-item" id="openBaiduMap">
+    <i class="fas fa-map-marked-alt"></i>
+    <span>打开百度地图</span>
+</div>
+        }
+        
+        .detail-card.active {
+            transform: translateY(0);
+            display: block;
+            animation: cardAppear 0.6s ease;
+        }
+        
+        @keyframes cardAppear {
+            0% { transform: translateY(120%); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .card-header h2 {
+            color: var(--light);
+            font-size: 2.2rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        .close-card {
+            background: var(--accent);
+            color: var(--dark);
+            border: none;
+            border-radius: 50%;
+            width: 42px;
+            height: 42px;
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        
+        .close-card:hover {
+            transform: rotate(90deg) scale(1.1);
+            background: var(--accent-light);
+        }
+        
+        .card-content {
+            display: flex;
+            gap: 30px;
+        }
+        
+        .card-image {
+            width: 280px;
+            height: 280px;
+            border-radius: 18px;
+            object-fit: cover;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(45deg, var(--primary), var(--primary-light));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.7);
+            overflow: hidden;
+            position: relative;
+            flex-shrink: 0;
+        }
+        
+        .card-image::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(26,42,108,0.7), rgba(42,82,152,0.7));
+        }
+        
+        .card-text {
+            flex: 1;
+        }
+        
+        .card-text p {
+            margin-bottom: 25px;
+            color: rgba(255, 255, 255, 0.85);
+            line-height: 1.8;
+            font-size: 1.15rem;
+        }
+        
+        .card-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 25px;
+        }
+        
+        .meta-item {
+            background: rgba(212, 175, 55, 0.15);
+            color: var(--accent);
+            padding: 12px 25px;
+            border-radius: 30px;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid rgba(212, 175, 55, 0.2);
+        }
+        
+        .meta-item i {
+            color: var(--accent);
+        }
+        
+        /* 底部信息 */
+        .footer {
+            background: rgba(13, 26, 77, 0.8);
+            color: var(--light);
+            padding: 30px 50px;
+            text-align: center;
+            font-size: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .footer p {
+            margin: 12px 0;
+            opacity: 0.7;
+        }
+        
+        .footer p:first-child {
+            font-weight: 500;
+            opacity: 0.9;
+            margin-top: 0;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 1200px) {
+            .header {
+                padding: 25px 40px;
+            }
+            
+            .header h1 {
+                font-size: 2.4rem;
+            }
+            
+            .detail-card {
+                left: 30px;
+                right: 30px;
+                padding: 25px;
+            }
+            
+            .card-header h2 {
+                font-size: 1.9rem;
+            }
+            
+            .card-content {
+                gap: 25px;
+            }
+            
+            .card-image {
+                width: 240px;
+                height: 240px;
+            }
+        }
+        
+        @media (max-width: 992px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .heritage-list {
+                width: 100%;
+                height: 400px;
+                border-right: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            }
+            
+            .detail-card .card-content {
+                flex-direction: column;
+            }
+            
+            .card-image {
+                width: 100%;
+                height: 300px;
+            }
+            
+            .header {
+                padding: 20px 30px;
+            }
+            
+            .header h1 {
+                font-size: 2.2rem;
+            }
+            
+            .header p {
+                font-size: 1.1rem;
+            }
+            
+            .stats {
+                gap: 20px;
+            }
+            
+            .stat-item {
+                padding: 15px 20px;
+                min-width: 160px;
+            }
+            
+            .stat-item .number {
+                font-size: 2.4rem;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .stats {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .detail-card {
+                left: 20px;
+                right: 20px;
+                bottom: 20px;
+                padding: 20px;
+            }
+            
+            .card-header h2 {
+                font-size: 1.7rem;
+            }
+            
+            .meta-item {
+                padding: 10px 20px;
+                font-size: 0.95rem;
+            }
+            
+            .footer {
+                padding: 25px 20px;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .header p {
+                font-size: 1rem;
+            }
+            
+            .card-header h2 {
+                font-size: 1.5rem;
+            }
+            
+            .card-text p {
+                font-size: 1rem;
+            }
+            
+            .search-box {
+                padding: 5px 5px 5px 15px;
+            }
+            
+            .search-box input {
+                padding: 10px;
+                font-size: 16px;
+            }
+            
+            .stat-item {
+                min-width: 140px;
+                padding: 12px 15px;
+            }
+            
+            .stat-item .number {
+                font-size: 2rem;
+            }
+        }
+        
+        /* 地图标记点样式 */
+        .marker {
+            width: 40px;
+            height: 50px;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .marker-icon {
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path fill="%23d4af37" d="M172.268 501.67C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0z"/></svg>') no-repeat center;
+            background-size: contain;
+            transition: transform 0.3s;
+        }
+        
+        .marker:hover .marker-icon {
+            transform: scale(1.2);
+        }
+        
+        .marker.active .marker-icon {
+            transform: scale(1.3);
+            filter: drop-shadow(0 0 15px rgba(212, 175, 55, 0.8));
+        }
+        
+        .marker-label {
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            background: var(--accent);
+            color: var(--dark);
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 600;
+            display: none;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .marker:hover .marker-label {
+            display: block;
+            animation: fadeInLabel 0.3s ease;
+        }
+        
+        @keyframes fadeInLabel {
+            from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+        
+        /* 搜索状态提示 */
+        .search-status {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 0.95rem;
+            z-index: 250;
+            display: none;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* 地图错误提示 */
+        .map-error {
+            background: rgba(255, 235, 238, 0.1);
+            color: #ff6b6b;
+            padding: 30px;
+            text-align: center;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-radius: 8px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .map-error h3 {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            color: #ff6b6b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .map-error ul {
+            text-align: left;
+            max-width: 500px;
+            margin: 20px auto;
+            padding-left: 30px;
+        }
+        
+        .map-error li {
+            margin-bottom: 10px;
+            opacity: 0.9;
+        }
+        
+        .map-error button {
+            background: var(--accent);
+            color: var(--dark);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 30px;
+            cursor: pointer;
+            margin-top: 25px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .map-error button:hover {
+            background: var(--accent-light);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* 导航动画 */
+        @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(15); opacity: 0; }
+        }
+        
+        /* 地图导航提示 */
+        .navigation-hint {
+            position: absolute;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent);
+            color: var(--dark);
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-size: 1rem;
+            font-weight: 600;
+            z-index: 250;
+            display: none;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            animation: fadeIn 0.4s ease;
+        }
+        
+        /* 高亮动画 */
+        @keyframes highlight {
+            0% { transform: scale(1); box-shadow: 0 0 0 rgba(212, 175, 55, 0.4); }
+            50% { transform: scale(1.05); box-shadow: 0 0 25px rgba(212, 175, 55, 0.8); }
+            100% { transform: scale(1); box-shadow: 0 0 0 rgba(212, 175, 55, 0.4); }
+        }
+        
+        .highlighted-item {
+            animation: highlight 1s ease;
+        }
+        
+        /* 水印效果 */
+        .watermark {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            color: rgba(255, 255, 255, 0.1);
+            font-size: 12rem;
+            font-weight: 900;
+            z-index: -1;
+            pointer-events: none;
+            user-select: none;
+        }
+        
+        /* 装饰元素 */
+        .decoration {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(212, 175, 55, 0.15) 0%, transparent 70%);
+            filter: blur(50px);
+            z-index: -1;
+            top: -150px;
+            right: -150px;
+        }
+        
+        .decoration-2 {
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(26, 42, 108, 0.3) 0%, transparent 70%);
+            filter: blur(40px);
+            bottom: -100px;
+            left: -100px;
+        }
+    </style>
+</head>
+<body>
+    <div class="decoration"></div>
+    <div class="decoration decoration-2"></div>
+    
+    <div class="container">
+        <!-- 头部区域 -->
+        <div class="header">
+            <div class="header-content">
+              <h1><em class="fas fa-landmark"></em> &nbsp;智绘沪韵-上海历史文脉图</h1>
+              <p>探索上海丰富的文化遗产，快来点击文物列表或地图标记点查看详情</p>
+                
+                <div class="search-container">
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="搜索文物名称或地点...">
+                        <button id="searchButton"><i class="fas fa-search"></i></button>
+                    </div>
+                    
+                    <div class="search-results" id="searchResults">
+                        <!-- 搜索结果将动态显示在这里 -->
+                    </div>
+                </div>
+                
+                <div class="stats">
+                    <div class="stat-item">
+                        <div class="number"><em class="fas fa-star"></em> 19</div>
+                        <div class="label">核心文物点</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="number"><em class="fas fa-map-marker-alt"></em> 40</div>
+                        <div class="label">博物馆与纪念馆</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="number"><i class="fas fa-layer-group"></i> 16</div>
+                        <div class="label">行政区覆盖</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 主内容区 -->
+        <div class="main-content">
+            <!-- 文物列表 -->
+            <div class="heritage-list">
+                <div class="list-header">
+                    <h2><i class="fas fa-list"></i> 上海博物馆与纪念馆名录</h2>
+                    <span><em class="fas fa-map-marker-alt"></em> <span id="markerCount">40</span>个标记点</span></div>
+                
+                <!-- 核心文物导航条 -->
+                <div class="core-heritage-container">
+                    <h3><i class="fas fa-star"></i> 核心文物导航</h3>
+                    <div class="core-heritage-carousel">
+                        <div class="core-heritage-scroll" id="coreHeritageScroll">
+                            <!-- 核心文物按钮将动态添加在这里 -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 区域导航条 -->
+                <div class="independent-carousel-container">
+                    <h3><i class="fas fa-map-marked-alt"></i> 区域导航</h3>
+                    <div class="independent-carousel">
+                        <div class="independent-nav-btn left">
+                            <i class="fas fa-chevron-left"></i>
+                        </div>
+                        <div class="independent-area-scroll" id="independentAreaScroll">
+                            <!-- 区域按钮将动态添加在这里 -->
+                        </div>
+                        <div class="independent-nav-btn right">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="filter-options">
+                   
+                </div>
+                
+                <!-- 文物列表项将动态添加在这里 -->
+            </div>
+            
+            <!-- 地图容器 -->
+            <div class="map-container">
+                <div class="watermark">SHANGHAI</div>
+                <div class="search-status" id="searchStatus"></div>
+              <div class="navigation-hint" id="navigationHint">正在导航到: <span id="currentPlace"></span></div>
+                <div id="map">正在加载地图...</div>
+                
+                <!-- 文物详情卡片 -->
+                <div class="detail-card" id="detailCard">
+                    <div class="card-header">
+                        <h2 id="heritageName">豫园</h2>
+                        <button class="close-card" id="closeCard">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="card-content">
+                       
+                        <div class="card-image-container"></div>
+                        <div class="card-text">
+                            <p id="heritageIntro">豫园始建于明代嘉靖、万历年间，距今已有四百余年历史。园主人潘允端，曾任四川布政使。其建园目的是'愉悦老亲'，而'愉'和'豫'意思相通，故取名豫园。园林设计精巧、布局细腻，以清幽秀丽、玲珑剔透见长，具有小中见大的特点，体现出明清两代江南园林建筑的艺术风格。</p>
+                            
+                            <div class="card-meta">
+                                <div class="meta-item">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    <span id="heritageAddress">上海市黄浦区安仁街218号</span>
+                                </div>
+                                <div class="meta-item">
+                                    <i class="fas fa-shield-alt"></i>
+                                    <span id="heritageLevel">全国重点文物保护单位</span>
+                                </div>
+                                <div class="meta-item">
+                                    <i class="fas fa-history"></i>
+                                    <span id="heritageEra">明代</span>
+                                </div>
+                                 <div class="meta-item" id="openBaiduMap"><em class="fas fa-map-marked-alt"></em> <span><a href="https://map.baidu.com/@12283862,2269366,13z" style="color: #FFFFFF">点击打开百度地图导航到此处</a></span></div>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+            </div>
+        </div>
+        
+        <!-- 底部信息 -->
+        <div class="footer">
+            <p>&copy;上海师范大学智绘沪韵—挑战杯小组2025版权所有</p>
+            <p>数据来源：上海市文化和旅游局 | 地图服务：百度地图API</p>
+            <p>联系电话：021-12345678 | 邮箱：heritage@shanghai.gov.cn</p>
+        </div>
+    </div>
+    
+    <script>
+        // 上海文物数据（整合所有区县的博物馆和纪念馆）
+        const heritageData = [
+            // 原核心文物点
+            {
+                id: 1,
+                name: "豫园",
+                intro: "豫园始建于明代嘉靖、万历年间，距今已有四百余年历史。园主人潘允端，曾任四川布政使。其建园目的是'愉悦老亲'，而'愉'和'豫'意思相通，故取名豫园。园林设计精巧、布局细腻，以清幽秀丽、玲珑剔透见长，具有小中见大的特点，体现出明清两代江南园林建筑的艺术风格。",
+                lat: 31.2270,
+                lng: 121.4925,
+                address: "上海市黄浦区安仁街218号",
+                level: "全国重点文物保护单位",
+                era: "明代",
+                image: "images/豫园.jpg",
+                tags: ["国家级", "古建筑"],
+                area: "黄浦区",
+                core: true
+            },
+            {
+                id: 2,
+                name: "龙华塔",
+                intro: "龙华塔是上海地区保存最完好的宋代古塔之一，始建于北宋太平兴国二年（公元977年）。塔为七层八角形楼阁式砖木结构，高40.64米。塔身呈八角形，内壁为方形，塔体由砖砌而成，外有腰檐、平座、栏杆。龙华塔不仅具有极高的建筑艺术价值，也是上海古老文明的象征。",
+                lat: 31.1751,
+                lng: 121.4520,
+                address: "上海市徐汇区龙华路2853号",
+                level: "全国重点文物保护单位",
+                era: "宋代",
+                image: "images/龙华塔.jpg",
+                tags: ["国家级", "古建筑"],
+                area: "徐汇区",
+                core: true
+            },
+            {
+                id: 3,
+                name: "中共一大会址",
+                intro: "中国共产党第一次全国代表大会会址，简称中共一大会址，是中国共产党的诞生地。1921年7月23日，中国共产党第一次全国代表大会在此召开。会址位于上海市兴业路76号（原望志路106号），是一幢典型的上海石库门建筑。现为全国重点文物保护单位，并建有纪念馆。",
+                lat: 31.2236,
+                lng: 121.4780,
+                address: "上海市黄浦区兴业路76号",
+                level: "全国重点文物保护单位",
+                era: "1921年",
+                image: "images/中共一大会址.jpg",
+                tags: ["国家级", "近现代"],
+                area: "黄浦区",
+                core: true
+            },
+            {
+                id: 4,
+                name: "外滩建筑群",
+                intro: "外滩建筑群位于上海市黄浦区的黄浦江畔，是上海近代优秀历史建筑的集中代表。这里矗立着52幢风格迥异的古典复兴大楼，素有外滩万国建筑博览群之称，是中国近现代重要史迹及代表性建筑。这些建筑大多建于20世纪初，汇集了哥特式、罗马式、巴洛克式、中西合璧式等多种风格。",
+                lat: 31.2397,
+                lng: 121.4998,
+                address: "上海市黄浦区中山东一路",
+                level: "全国重点文物保护单位",
+                era: "20世纪初",
+                image: "images/外滩建筑群.jpg",
+                tags: ["国家级", "近现代"],
+                area: "黄浦区",
+                core: true
+            },
+            {
+                id: 5,
+                name: "上海博物馆",
+                intro: "上海博物馆是世界顶级的中国古代艺术博物馆，创建于1952年，其前身可追溯至1874年成立的亚洲文会上海博物院。馆藏文物102余万件，涵盖33个门类，是全球收藏中国古代艺术门类最齐全的博物馆之一。",
+                lat: 31.2300,
+                lng: 121.4750,
+                address: "上海市黄浦区人民大道201号",
+                level: "国家一级博物馆",
+                era: "1952年",
+                image: "images/上海博物馆.jpg",
+                tags: ["国家级", "艺术"],
+                area: "黄浦区",
+                core: true
+            },
+            {
+                id: 6,
+                name: "上海天文馆",
+                intro: "全球最大的天文馆，占地面积5.8万㎡,建筑面积3.8万㎡。主建筑以优美的螺旋形态构成'天体运行轨道'，主展区包括'家园''宇宙''征程'三部分，全景展现宇宙浩瀚图景。",
+                lat: 30.9200,
+                lng: 121.9300,
+                address: "浦东新区临港大道380号",
+                level: "国家级科普基地",
+                era: "2021年",
+                image: "images/上海天文馆.jpg",
+                tags: ["国家级", "科技"],
+                area: "浦东新区",
+                core: true
+            },
+            {
+                id: 7,
+                name: "上海科技馆",
+                intro: "上海科技馆以科学传播为宗旨，围绕'自然•人•科技'主题，有生物万象、地壳探秘、机器人世界等11个常设展厅，是上海市重要的科普教育基地。",
+                lat: 31.2200,
+                lng: 121.5400,
+                address: "浦东新区世纪大道2000号",
+                level: "国家一级博物馆",
+                era: "2001年",
+                image: "images/上海科技馆.jpg",
+                tags: ["国家级", "科技"],
+                area: "浦东新区",
+                core: true
+            },
+            {
+                id: 8,
+                name: "上海自然博物馆",
+                intro: "共有五层，地上2层，地下3层。在'演化的乐章''生命的画卷''文明的史诗'三大主题板块下设十个常设主题展区，建筑设计灵感来源于'螺'的壳体结构。",
+                lat: 31.2370,
+                lng: 121.4650,
+                address: "上海市静安区北京西路510号",
+                level: "国家一级博物馆",
+                era: "2015年",
+                image: "images/上海自然博物馆.jpg",
+                tags: ["国家级", "科学"],
+                area: "静安区",
+                core: true
+            },
+            
+            // 黄浦区新增
+            {
+                id: 9,
+                name: "上海体育博物馆",
+                intro: "上海体育博物馆，位于南京西路150号上海体育大厦内。2021年7月11日，上海体育博物馆正式揭牌。在第二展厅，一面'中国体育百年历史墙'等待着参观者前去探索。上海体育博物馆拥有历史之舟、奥运之光、活力之城和未来之窗四个主展厅，全馆展陈面积为1813平方米。",
+                lat: 31.2352,
+                lng: 121.4692,
+                address: "上海市黄浦区南京西路150号",
+                level: "专题博物馆",
+                era: "2021年",
+                image: "images/上海体育博物馆.jpg",
+                tags: ["体育", "近现代"],
+                area: "黄浦区",
+                core: false
+            },
+            {
+                id: 10,
+                name: "上海当代艺术博物馆",
+                intro: "上海当代艺术馆(MOCA Shanghai)是位于上海市南京西路人民公园内的艺术馆，于2005年竣工，由龚明光基金会出资建造，经上海市政府批准的非盈利且独立运作的艺术机构。该馆致力推广中国及全世界的当代艺术。",
+                lat: 31.2335,
+                lng: 121.4751,
+                address: "上海市黄浦区南京西路人民公园内",
+                level: "艺术博物馆",
+                era: "2005年",
+                image: "images/上海当代艺术博物馆.jpg",
+                tags: ["艺术", "现代"],
+                area: "黄浦区",
+                core: false
+            },
+            {
+                id: 11,
+                name: "中共一大纪念馆",
+                intro: "中国共产党第一次全国代表大会纪念馆，简称中共一大纪念馆，占地面积1300余平方米，是一所社会科学类历史遗址专题博物馆。截至2019年末，中国共产党第一次全国代表大会纪念馆藏品有55768件/套，其中珍贵文物8338件/套。",
+                lat: 31.2249,
+                lng: 121.4809,
+                address: "上海市黄浦区黄陂南路374号",
+                level: "国家5A级景区",
+                era: "1952年",
+                image: "images/中共一大纪念馆.jpg",
+                tags: ["历史", "教育"],
+                area: "黄浦区",
+                core: false
+            },
+            {
+                id: 12,
+                name: "上海孙中山故居纪念馆",
+                intro: "上海孙中山故居纪念馆，位于上海市香山路7号，占地面积2500余平方米，展示面积1100平方米，主要由孙中山故居和孙中山文物馆两个展示场所组成。",
+                lat: 31.2235,
+                lng: 121.4582,
+                address: "上海市黄浦区香山路7号",
+                level: "全国重点文物保护单位",
+                era: "1918年",
+                image: "images/上海孙中山故居纪念馆.jpg",
+                tags: ["历史", "名人故居"],
+                area: "黄浦区",
+                core: true
+            },
+            {
+                id: 13,
+                name: "上海市历史博物馆",
+                intro: "上海市历史博物馆（上海革命历史博物馆），是全面综合反映上海6000年悠久地方历史及革命历史的地志性博物馆。   上海市历史博物馆藏品总数约11万件，藏品来源主要来自上级部门调拨（上海市文物管理委员会）、系统内其他单位移交等，另有市场征集、参与拍卖、接受捐赠所得。藏品类别分十五大类：书画、金属、陶瓷、工艺、证章、文献、印刷、纺织品、石刻、钱币、照片、剪纸、邮票、唱片和其他杂项等。",
+                lat: 31.232893,
+                lng: 121.466517,
+                address: "上海市黄浦区南京西路325号",
+                level: "全国重点文物保护单位",
+                era: "1983年",
+                image: "images/上海市历史博物馆.jpg",
+                tags: ["国家级", "历史"],
+                area: "黄浦区",
+                core: true
+            },
+            {
+                id: 14,
+                name: "上海琉璃艺术博物馆",
+                intro: "上海琉璃艺术博物馆，位于上海市，据2020年9月国家文物局信息显示，现有藏品380件/套，开展教育活动60次，参观人数11万人次。馆内收藏诸多中国古代琉璃菁华、世界近现代玻璃艺术杰作，先后举办美国玻璃艺术大师史蒂文‧温伯格，法国国宝级玻璃艺术家安东尼•勒彼里耶个展。",
+                lat: 31.2219,
+                lng: 121.4885,
+                address: "上海市黄浦区泰康路25号",
+                level: "专题博物馆",
+                era: "2006年",
+                image: "images/上海琉璃艺术博物馆.jpg",
+                tags: ["艺术", "琉璃"],
+                area: "黄浦区",
+                core: false
+            },
+            {
+                id: 15,
+                name: "中国乒乓球博物馆",
+                intro: "中国乒乓球博物馆位于上海市黄浦区世博园地块，占地面积5000平方米，总建筑面积10389平方米，展区面积共4000余平方米，现存19000余套国内外珍贵藏品。中国乒乓球博物馆根据乒乓球运动传入中国和在中国的发展历程，设有常青之基、铸就辉煌、乒乓之春、科技助势四个展区。馆内还设置陈列展览区、公众服务区、体验互动区、藏品技术区、教育研究区等区域，共有藏品12000余件，并配有先进的VR互动体验区、多媒体互动区和3D影院。",
+                lat: 31.2149,
+                lng: 121.4977,
+                address: "上海市黄浦区局门路796号",
+                level: "专题博物馆",
+                era: "2018年",
+                image: "images/中国乒乓球博物馆.jpg",
+                tags: ["体育", "国际"],
+                area: "黄浦区",
+                core: false
+            },
+            {
+                id: 16,
+                name: "上海世博会博物馆",
+                intro: "上海世博会博物馆是国际展览局唯一官方博物馆和官方文献研究中心，也是全世界独一无二的全面展示世博专题的博物馆。总建筑面积46534.48平方米，对外开放管理总面积90580平方米，建筑高度34.8米（地上六层，地下一层）。截至2021年，上海世博会博物馆有藏品总数18957件（套），珍贵文物315件（套）",
+                lat: 31.19928,
+                lng: 121.47717,
+                address: "上海市黄浦区蒙自路818号",
+                level: "国家级博物馆",
+                era: "2017年",
+                image: "images/上海世博会博物馆.jpg",
+                tags: ["国家级", "国际"],
+                area: "黄浦区",
+                core: false
+            },
+            // 徐汇区新增
+            {
+                id: 17,
+                name: "上海气象博物馆",
+                intro: "上海气象博物馆位于上海市徐汇区蒲西路166号，前身为1872年建立的徐家汇观象台旧址，是中国唯一连续151年不间断记录气象数据的百年气候站。",
+                lat: 31.1975,
+                lng: 121.4378,
+                address: "上海市徐汇区蒲西路166号",
+                level: "科普教育基地",
+                era: "1872年",
+                image: "images/上海气象博物馆.jpg",
+                tags: ["科学", "历史"],
+                area: "徐汇区",
+                core: false
+            },
+            {
+                id: 18,
+                name: "上海电影博物馆",
+                intro: "上海电影博物馆，位于上海市徐汇区，上海电影制片厂原址，分为四层展厅，周一闭馆。投资9亿元，总建筑面积超过10万平方米，为一座国内规模最大的电影博物馆。",
+                lat: 31.1937,
+                lng: 121.4395,
+                address: "上海市徐汇区漕溪北路595号",
+                level: "专题博物馆",
+                era: "2013年",
+                image: "images/上海电影博物馆.jpg",
+                tags: ["文化", "艺术"],
+                area: "徐汇区",
+                core: true
+            },
+		    {
+                id: 19,
+                name: "上海交响音乐博物馆",
+                intro: "上海交响音乐博物馆是国内首个以交响音乐为主题的博物馆，建筑前身为20世纪20年代建造的周宗良宅邸，占地4773平方米，含五栋欧式建筑及花园，与上海交响乐团、上音歌剧院构成音乐文化街区。馆内设“乐之河”“乐之华”“乐之传”三大展区，藏有300余件文献与实物，涵盖19世纪70年代末以来西方交响乐在华发展历程，包括中国首架音乐会施坦威钢琴、1929年梅百器指挥黑胶唱片及朱践耳捐赠钢琴等。",
+                lat: 31.2263,
+                lng: 121.4716,
+                address: "上海市徐汇区宝庆路3号",
+                level: "专题博物馆",
+                era: "2013年",
+                image: "images/上海交响音乐博物馆.jpg",
+                tags: ["文化", "音乐"],
+                area: "徐汇区",
+                core: false
+            },
+            
+            // 长宁区新增
+            {
+                id: 20,
+                name: "上海艺术品博物馆",
+                intro: "上海艺术品博物馆（Shanghai Art Collection Museum），位于上海市长宁区风景如画的天山公园内，是一家艺术博物馆，自2009年9月22日对外开放。",
+                lat: 31.2140,
+                lng: 121.4085,
+                address: "上海市长宁区延安西路1731号天山公园内",
+                level: "艺术博物馆",
+                era: "2009年",
+                image: "images/上海艺术品博物馆.jpg",
+                tags: ["艺术", "文化"],
+                area: "长宁区",
+                core: false
+            },
+            {
+                id: 21,
+                name: "上海消防博物馆",
+                intro: "上海消防博物馆位于上海市长宁区中山西路229号，场馆面积约2400平方米。该馆于2007年8月1日试运行，11月9日正式开馆，是国内一流且具有世界先进水平的专业博物馆。",
+                lat: 31.2048,
+                lng: 121.4223,
+                address: "上海市长宁区中山西路229号",
+                level: "专题博物馆",
+                era: "2007年",
+                image: "images/上海消防博物馆.jpg",
+                tags: ["历史", "科普"],
+                area: "长宁区",
+                core: false
+            },
+            
+            // 普陀区新增
+            {
+                id: 22,
+                name: "上海造币博物馆",
+                intro: "上海造币博物馆，位于上海市普陀区光复西路15号，地处苏州河畔的'上海市优秀历史建筑'---上海造币有限公司办公大楼内，面积约600平方米。",
+                lat: 31.2468,
+                lng: 121.4432,
+                address: "上海市普陀区光复西路15号",
+                level: "专题博物馆",
+                era: "近现代",
+                image: "images/上海造币博物馆.jpg",
+                tags: ["历史", "工业"],
+                area: "普陀区",
+                core: false
+            },
+            
+            // 闵行区新增
+            {
+                id: 23,
+                name: "上海地铁博物馆",
+                intro: "上海地铁博物馆隶一家展示城市轨道交通发展历程的博物馆。建筑面积5000平方米，展陈面积3200平方米，位于上海市闵行区吴中路万象城商圈内。",
+                lat: 31.1792,
+                lng: 121.3910,
+                address: "上海市闵行区吴中路1799-7号",
+                level: "专题博物馆",
+                era: "现代",
+                image: "images/上海地铁博物馆.jpg",
+                tags: ["科技", "交通"],
+                area: "闵行区",
+                core: false
+            },
+            
+            // 虹口区新增
+            {
+                id: 24,
+                name: "中共四大纪念馆",
+                intro: "中共四大纪念馆，位于上海市虹口区四川北路1468号四川北路公园内，总面积约3040平方米，基本陈列展厅面积约1839平方米，属社会科学类历史专题博物馆。",
+                lat: 31.2530,
+                lng: 121.4850,
+                address: "上海市虹口区四川北路1468号",
+                level: "历史博物馆",
+                era: "2006年",
+                image: "images/中共四大纪念馆.jpg",
+                tags: ["历史", "红色"],
+                area: "虹口区",
+                core: true
+            },
+            {
+                id: 25,
+                name: "鲁迅纪念馆",
+                intro: "上海鲁迅纪念馆是位于上海市虹口区甜爱路200号的纪念馆。占地面积4212平方米，建筑面积5043平方米，于1951年1月正式开放。",
+                lat: 31.2728,
+                lng: 121.4851,
+                address: "上海市虹口区甜爱路200号",
+                level: "国家一级博物馆",
+                era: "1951年",
+                image: "images/鲁迅纪念馆.jpg",
+                tags: ["历史", "名人"],
+                area: "虹口区",
+                core: true
+            },
+            
+            // 杨浦区新增
+            {
+                id: 26,
+                name: "世界技能博物馆",
+                intro: "世界技能博物馆是全球第一个致力于展示职业技能的博物馆，坐落于杨浦大桥下，由百年历史建筑永安栈房改建而成。作为世界技能组织唯一认可的官方博物馆，它展示国际技能发展历史和最新潮流。",
+                lat: 31.2580,
+                lng: 121.5310,
+                address: "上海市杨浦滨江区域",
+                level: "专题博物馆",
+                era: "2023年",
+                image: "images/世界技能博物馆.jpg",
+                tags: ["教育", "现代"],
+                area: "杨浦区",
+                core: false
+            },
+            
+            // 宝山区新增
+            {
+                id: 27,
+                name: "上海玻璃博物馆",
+                intro: "上海玻璃博物馆是经上海市民政局批准，由上海市文物局主管的专业博物馆。博物馆于2015年被评为国家AAAA级旅游景区，同时也是上海市科普教育基地。",
+                lat: 31.3350,
+                lng: 121.4560,
+                address: "宝山区长江西路685号",
+                level: "AAAA级景区",
+                era: "2011年",
+                image: "images/上海玻璃博物馆.jpg",
+                tags: ["艺术", "科普"],
+                area: "宝山区",
+                core: false
+            },
+            
+            // 奉贤区新增
+            {
+                id: 28,
+                name: "奉贤区博物馆",
+                intro: "上海市奉贤区博物馆始建于20世纪60年代初，占地面积2万余平方米，建筑面积约3.6万平方米。历史陈列厅展览陈列面积约1560平方米，海塘文化厅展览陈列面积约1320平方米。",
+                lat: 30.9280,
+                lng: 121.4740,
+                address: "上海市奉贤区南桥镇湖畔路",
+                level: "地方博物馆",
+                era: "1960年代",
+                image: "images/奉贤区博物馆.jpg",
+                tags: ["历史", "文化"],
+                area: "奉贤区",
+                core: false
+            },
+            
+            // 嘉定区新增
+            {
+                id: 29,
+                name: "嘉定区博物馆",
+                intro: "嘉定博物馆主馆，占地面积6705平方米，总建筑面积约9608平方米，属地方性综合博物馆。嘉定博物馆包括主馆、上海中国科举博物馆、法华塔院内的展览及嘉定竹刻博物馆。",
+                lat: 31.3830,
+                lng: 121.2570,
+                address: "上海市嘉定区博乐路215号",
+                level: "地方博物馆",
+                era: "1958年",
+                image: "images/嘉定区博物馆.jpg",
+                tags: ["历史", "综合"],
+                area: "嘉定区",
+                core: false
+            },
+            {
+                id: 30,
+                name: "上海汽车博物馆",
+                intro: "上海汽车博物馆是中国专业汽车博物馆，占地11700平方米，建筑面积27985平方米，建筑高度32.45米，总展示面积约1万平方米。",
+                lat: 31.2880,
+                lng: 121.1800,
+                address: "上海嘉定安亭的汽车博览公园内",
+                level: "专题博物馆",
+                era: "2007年",
+                image: "images/上海汽车博物馆.jpg",
+                tags: ["科技", "交通"],
+                area: "嘉定区",
+                core: true
+            },
+            
+            // 青浦区新增
+            {
+                id: 31,
+                name: "青浦区博物馆",
+                intro: "青浦区博物馆前身为始建于1958年的青浦县博物馆。建筑面积约8800平方米，展厅面积3600平方米；馆藏文物一万余件。",
+                lat: 31.1600,
+                lng: 121.1200,
+                address: "上海市青浦区青浦镇华青南路1000号",
+                level: "地方博物馆",
+                era: "1958年",
+                image: "images/青浦区博物馆.jpg",
+                tags: ["历史", "文化"],
+                area: "青浦区",
+                core: false
+            },
+            
+            // 松江区新增
+            {
+                id: 32,
+                name: "松江区博物馆",
+                intro: "上海市松江区博物馆创建于民国四年（1915年）1月24日，原名松江县教育图书博物馆，占地面积4700平方米、建筑面积2200平方米。",
+                lat: 31.0150,
+                lng: 121.2300,
+                address: "上海市松江区方塔公园东首",
+                level: "地方博物馆",
+                era: "1915年",
+                image: "images/松江区博物馆.jpg",
+                tags: ["历史", "文化"],
+                area: "松江区",
+                core: false
+            },
+            {
+                id: 33,
+                name: "上海天文博物馆",
+                intro: "上海天文博物馆占地面积约8000平方米，隶属中国科学院上海天文台，是自然科学类天文学科普专题博物馆，根据天文热点布置相关科普展示内容。",
+                lat: 31.0960,
+                lng: 121.1900,
+                address: "上海市松江区外青松公路9258号西佘山山顶",
+                level: "科普基地",
+                era: "2004年",
+                image: "images/上海天文博物馆.jpg",
+                tags: ["科学", "教育"],
+                area: "松江区",
+                core: true
+            },
+            
+            // 金山区新增
+            {
+                id: 34,
+                name: "金山区博物馆",
+                intro: "金山区博物馆占地面积1667平方米，建筑面积1319平方米，陈列面积420平方米，设有三个陈列展厅。",
+                lat: 30.7450,
+                lng: 121.3400,
+                address: "上海市金山区金山大道",
+                level: "地方博物馆",
+                era: "1984年",
+                image: "images/金山区博物馆.jpg",
+                tags: ["历史", "文化"],
+                area: "金山区",
+                core: false
+            },
+            
+            // 浦东新区新增
+            {
+                id: 35,
+                name: "上海博物馆东馆",
+                intro: "上海博物馆东馆定位为中国古代艺术博物馆，是上海市委市政府着眼国际文化大都市建设作出的重大决策部署，也是'十三五'时期上海市重大文化设施建设项目。",
+                lat: 31.2280,
+                lng: 121.5500,
+                address: "上海市浦东新区世纪大道1952号",
+                level: "国家一级博物馆",
+                era: "2023年",
+                image: "images/上海博物馆东馆.jpg",
+                tags: ["艺术", "文化"],
+                area: "浦东新区",
+                core: true
+            },
+            {
+                id: 36,
+                name: "中国航海博物馆",
+                intro: "上海中国航海博物馆是经国务院批准设立的中国第一家国家级航海博物馆，旨在弘扬中华民族灿烂的航海文明和优良传统，建构国际航海交流平台。",
+                lat: 30.9050,
+                lng: 121.9450,
+                address: "浦东新区临港新城申港大道197号",
+                level: "国家级博物馆",
+                era: "2010年",
+                image: "images/中国航海博物馆.jpg",
+                tags: ["历史", "科技"],
+                area: "浦东新区",
+                core: true
+            },
+            {
+                id: 37,
+                name: "上海浦东美术馆",
+                intro: "浦东美术馆面对外滩历史建筑群。位于陆家嘴滨江第一线，紧邻东方明珠塔、上海国际会议中心，总建筑面积40590平方米。",
+                lat: 31.2400,
+                lng: 121.5020,
+                address: "上海市浦东新区滨江大道2777号",
+                level: "艺术博物馆",
+                era: "2021年",
+                image: "images/上海浦东美术馆.jpg",
+                tags: ["艺术", "现代"],
+                area: "浦东新区",
+                core: true
+            },
+            
+            // 崇明区新增
+            {
+                id: 38,
+                name: "崇明区博物馆",
+                intro: "崇明区博物馆隶属于崇明区文化和旅游局。其展馆中，'崇明岛史'真实反映崇明岛的形成及其政治、经济、交通、水利、文化、军事、科举等各方面的历史发展和建设成就。",
+                lat: 31.6300,
+                lng: 121.4000,
+                address: "上海市崇明区城桥镇鳌山路696号",
+                level: "地方博物馆",
+                era: "1959年",
+                image: "images/崇明区博物馆.jpg",
+                tags: ["历史", "文化"],
+                area: "崇明区",
+                core: false
+            },
+            
+            // 静安区新增
+            {
+                id: 39,
+                name: "上海四行仓库抗战纪念馆",
+                intro: "上海四行仓库抗战纪念馆为上海市文物保护单位四行仓库旧址西部，总建筑面积约3800平方米，分为1-3层，其中1-2层为常设展厅区域，3层为临时展厅。",
+                lat: 31.2460,
+                lng: 121.4750,
+                address: "上海市静安区光复路1号",
+                level: "历史博物馆",
+                era: "2015年",
+                image: "images/上海四行仓库抗战纪念馆.jpg",
+                tags: ["历史", "红色"],
+                area: "静安区",
+                core: true
+            },
+            {
+                id: 40,
+                name: "上海棋牌文化博物馆",
+                intro: "上海棋牌文化博物馆是全国首家综合性棋牌文化博物馆，位于南京西路595号，收集了围棋、象棋、国际象棋、国际跳棋、五子棋、桥牌六大类，涵盖古今中外的1200多件相关藏品。",
+                lat: 31.2330,
+                lng: 121.4650,
+                address: "南京西路595号",
+                level: "专题博物馆",
+                era: "2013年",
+                image: "images/上海棋牌文化博物馆.jpg",
+                tags: ["文化", "休闲"],
+                area: "静安区",
+                core: false
+            }
+        ];
+
+        // 全局变量
+        let searchTimeout = null;
+        let markers = [];
+        let map = null;
+        let activeMarker = null;
+
+        // 初始化地图
+        function initMap() {
+            try {
+                map = new BMap.Map("map", {
+                    coorType: 'bd09ll'
+                });
+                
+                const point = new BMap.Point(121.4737, 31.2304);
+                map.centerAndZoom(point, 12);
+                map.addControl(new BMap.NavigationControl());
+                map.addControl(new BMap.ScaleControl());
+                map.addControl(new BMap.OverviewMapControl());
+                map.setMapStyle({style:'light'});
+                
+                // 添加自定义样式
+                map.setMapStyleV2({
+                    styleId: 'a0b8c7d6e9f4a3b2c1d0e9f8a7b6c5d4'
+                });
+                
+                heritageData.forEach(item => {
+                    const point = new BMap.Point(item.lng, item.lat);
+                    const marker = new BMap.Marker(point, {
+                        icon: new BMap.Icon('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="40" height="50"><path fill="%23d4af37" d="M172.268 501.67C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0z"/></svg>', new BMap.Size(40, 50))
+                    });
+                    
+                    marker.heritageId = item.id;
+                    
+                    map.addOverlay(marker);
+                    markers.push(marker);
+                    
+                    marker.addEventListener("click", function() {
+                        showHeritageDetail(item.id);
+                        document.querySelectorAll('.heritage-item').forEach(el => {
+                            el.classList.remove('active');
+                            if(parseInt(el.getAttribute('data-id')) === item.id) {
+                                el.classList.add('active');
+                                el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                            }
+                        });
+                    });
+                });
+                
+                setTimeout(() => {
+                    try {
+                        map.checkResize();
+                    } catch (e) {
+                        console.warn("地图重绘失败", e);
+                    }
+                }, 500);
+                
+            } catch (e) {
+                console.error("地图初始化失败:", e);
+                document.getElementById("map").innerHTML = `
+                    <div class="map-error">
+                        <h3><i class="fas fa-exclamation-triangle"></i> 地图加载失败</h3>
+                        <p>${e.message}</p>
+                        <p>请检查：</p>
+                        <ul>
+                            <li>百度地图API密钥是否有效</li>
+                            <li>密钥是否启用了JavaScript API服务</li>
+                            <li>域名/IP是否添加到Referer白名单</li>
+                        </ul>
+                        <button onclick="location.reload()">
+                            <i class="fas fa-sync-alt"></i> 重新加载
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        // 显示文物详情
+        function showHeritageDetail(id) {
+            const heritage = heritageData.find(item => item.id === id);
+            if (heritage) {
+                document.getElementById("heritageName").textContent = heritage.name;
+                document.getElementById("heritageIntro").textContent = heritage.intro;
+                
+                document.getElementById("heritageAddress").textContent = heritage.address;
+                document.getElementById("heritageLevel").textContent = heritage.level;
+                document.getElementById("heritageEra").textContent = heritage.era;
+                
+                const card = document.getElementById("detailCard");
+                card.classList.add("active");
+                
+                highlightMarker(id);
+        currentHeritage = heritage;
+    }
+}
+
+// 在页面加载时绑定事件
+window.onload = function() {
+    // ...其他初始化代码...
+    
+    // 绑定打开百度地图功能
+    document.getElementById('openBaiduMap').addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (currentHeritage) {
+            const url = `https://map.baidu.com/?latlng=${currentHeritage.lat},${currentHeritage.lng}&title=${encodeURIComponent(currentHeritage.name)}`;
+            window.open(url, '_blank');
+        }
+    });
+};
+		
+        // 高亮显示对应的标记点
+function highlightMarker(id) {
+    markers.forEach(marker => {
+        marker.setIcon(new BMap.Icon(
+            'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="40" height="50"><path fill="%23d4af37" d="M172.268 501.67C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0z"/></svg>',
+            new BMap.Size(40, 50)
+        ));
+    });
+
+    //高亮当前标记
+    const marker = markers.find(m => m.heritageId === id);
+    if (marker) {
+        marker.setIcon(new BMap.Icon(
+            'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="40" height="50"><path fill="%23ff0000" d="M172.268 501.67C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0z"/></svg>',
+            new BMap.Size(40, 50)
+        ));
+        activeMarker = marker;
+    }
+}
+
+        // 导航到指定文物位置
+ function navigateToHeritage(id) {
+            if (!map) return;
+            const item = heritageData.find(i => i.id === id);
+            if (!item) return;
+
+            const point = new BMap.Point(item.lng, item.lat);
+            map.panTo(point);
+            map.setZoom(17);
+
+            showHeritageDetail(id);
+            highlightMarker(id);
+
+            // 提示条
+            const hint = document.getElementById('navigationHint');
+            const currentPlace = document.getElementById('currentPlace');
+            currentPlace.textContent = item.name;
+            hint.style.display = 'block';
+            setTimeout(() => hint.style.display = 'none', 3000);
+        }
+        // 初始化核心文物导航条
+        function initCoreHeritageCarousel() {
+            const coreHeritageScroll = document.getElementById('coreHeritageScroll');
+            
+            // 添加核心文物按钮
+            heritageData.filter(item => item.core).forEach(item => {
+                const heritageBtn = document.createElement('div');
+                heritageBtn.className = 'core-heritage-btn';
+                heritageBtn.setAttribute('data-id', item.id);
+                heritageBtn.innerHTML = `<i class="fas fa-map-pin"></i>${item.name}`;
+                
+                heritageBtn.addEventListener('click', function() {
+                    navigateToHeritage(item.id);
+                    
+                    // 更新列表选中状态
+                    document.querySelectorAll('.heritage-item').forEach(el => {
+                        el.classList.remove('active');
+                        if(parseInt(el.getAttribute('data-id')) === item.id) {
+                            el.classList.add('active');
+                            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    });
+                });
+                
+                coreHeritageScroll.appendChild(heritageBtn);
+            });
+        }
+        
+        // 初始化区域导航条
+        function initAreaCarousel() {
+            const areas = [...new Set(heritageData.map(item => item.area))];
+            const areaScroll = document.getElementById('independentAreaScroll');
+            
+            const allBtn = document.createElement('div');
+            allBtn.className = 'independent-area-btn active';
+            allBtn.setAttribute('data-area', '全部');
+            allBtn.textContent = '全部';
+            areaScroll.appendChild(allBtn);
+            
+            areas.forEach(area => {
+                const areaBtn = document.createElement('div');
+                areaBtn.className = 'independent-area-btn';
+                areaBtn.setAttribute('data-area', area);
+                areaBtn.textContent = area;
+                areaScroll.appendChild(areaBtn);
+            });
+            
+            document.querySelectorAll('.independent-area-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const area = this.getAttribute('data-area');
+                    
+                    document.querySelectorAll('.independent-area-btn').forEach(b => {
+                        b.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                    
+                    filterHeritageByArea(area);
+                });
+            });
+            
+            document.querySelectorAll('.independent-nav-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const scrollContainer = document.getElementById('independentAreaScroll');
+                    const scrollAmount = 200;
+                    
+                    if (this.classList.contains('left')) {
+                        scrollContainer.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+                    } else {
+                        scrollContainer.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+                    }
+                });
+            });
+        }
+        
+        // 按区域筛选文物
+        function filterHeritageByArea(area) {
+            let filteredData;
+            
+            if (area === '全部') {
+                filteredData = heritageData;
+            } else {
+                filteredData = heritageData.filter(item => item.area === area);
+            }
+            
+            markers.forEach((marker, index) => {
+                if (area === '全部' || heritageData[index].area === area) {
+                    marker.show();
+                } else {
+                    marker.hide();
+                }
+            });
+            
+            document.querySelectorAll('.heritage-item').forEach(el => {
+                const id = parseInt(el.getAttribute('data-id'));
+                const item = heritageData.find(i => i.id === id);
+                
+                if (area === '全部' || item.area === area) {
+                    el.style.display = 'flex';
+                } else {
+                    el.style.display = 'none';
+                }
+            });
+            
+            document.getElementById('markerCount').textContent = filteredData.length;
+        }
+
+        // 生成文物列表项
+// 生成文物列表项 - 修改后的函数
+        function generateHeritageItems() {
+            const listContainer = document.querySelector('.heritage-list');
+            const filterOptions = document.querySelector('.filter-options');
+            const itemsContainer = document.createElement('div');
+            itemsContainer.id = 'heritageItemsContainer';
+            
+            heritageData.forEach(item => {
+                const itemElement = document.createElement('div');
+                itemElement.className = 'heritage-item';
+                itemElement.setAttribute('data-id', item.id);
+                
+                // 修改这里：使用img标签显示图片
+                itemElement.innerHTML = `
+                    <div class="heritage-image">
+                        <img src="${item.image}" alt="${item.name}" onerror="this.parentNode.classList.add('fallback'); this.parentNode.textContent=this.alt.substring(0,2);">
+                    </div>
+                    <div class="heritage-info">
+                        <h3>${item.name}</h3>
+                        <p>${item.intro.substring(0, 60)}...</p>
+                        <div class="heritage-meta">
+                            ${item.tags.map(tag => `<span class="meta-tag">${tag}</span>`).join('')}
+                        </div>
+                    </div>
+                `;
+                
+                itemElement.addEventListener('click', function() {
+                    const id = parseInt(this.getAttribute('data-id'));
+                    navigateToHeritage(id);
+                    
+                    document.querySelectorAll('.heritage-item').forEach(el => {
+                        el.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                    
+                    this.classList.add('highlighted-item');
+                    setTimeout(() => {
+                        this.classList.remove('highlighted-item');
+                    }, 800);
+                });
+                
+                itemsContainer.appendChild(itemElement);
+            });
+            
+            // 在过滤选项后插入文物列表
+            listContainer.insertBefore(itemsContainer, filterOptions.nextSibling);
+        }
+
+        // 初始化
+        window.onload = function() {
+            try {
+                initMap();
+            } catch (e) {
+                console.error("地图初始化失败:", e);
+                alert("地图初始化失败，请确保已正确配置百度地图API密钥");
+            }
+            
+            initCoreHeritageCarousel();
+            initAreaCarousel();
+            generateHeritageItems();
+            
+            document.getElementById("closeCard").addEventListener("click", function() {
+                document.getElementById("detailCard").classList.remove("active");
+            });
+            
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.filter-btn').forEach(b => {
+                        b.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                    
+                    // 这里可以添加按标签筛选的逻辑
+                });
+            });
+            
+            const searchInput = document.getElementById('searchInput');
+            const searchButton = document.getElementById('searchButton');
+            const searchResults = document.getElementById('searchResults');
+            
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    searchHeritage(this.value);
+                }, 300);
+            });
+            
+            searchButton.addEventListener('click', function() {
+                searchHeritage(searchInput.value);
+            });
+            
+            searchInput.addEventListener('keyup', function(e) {
+                if (e.key === 'Enter') {
+                    searchHeritage(this.value);
+                }
+            });
+            
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.search-container')) {
+                    searchResults.classList.remove('active');
+                    document.getElementById('searchStatus').style.display = 'none';
+                }
+            });
+            
+            // 默认显示豫园
+            setTimeout(() => {
+                navigateToHeritage(1);
+            }, 1000);
+        };
+        
+        // 搜索功能
+        function searchHeritage(term) {
+            term = term.trim().toLowerCase();
+            const status = document.getElementById('searchStatus');
+            status.textContent = `正在搜索: "${term}"...`;
+            status.style.display = 'block';
+            
+            setTimeout(() => {
+                if (!term) {
+                    document.getElementById('searchResults').innerHTML = '';
+                    document.getElementById('searchResults').classList.remove('active');
+                    status.style.display = 'none';
+                    return;
+                }
+                
+                const results = heritageData.filter(item => 
+                    item.name.toLowerCase().includes(term) ||
+                    item.address.toLowerCase().includes(term) ||
+                    item.intro.toLowerCase().includes(term)
+                );
+                
+                const resultsContainer = document.getElementById('searchResults');
+                resultsContainer.innerHTML = '';
+                
+                if (results.length > 0) {
+                    results.forEach(item => {
+                        const resultItem = document.createElement('div');
+                        resultItem.className = 'search-result-item';
+                        resultItem.innerHTML = `
+                            <div style="width:60px;height:60px;background:linear-gradient(45deg, #1a2a6c, #2a5298);border-radius:10px;margin-right:15px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.7);font-size:14px;">${item.name.substring(0,2)}</div>
+                            <div>
+                                <h4>${item.name}</h4>
+                                <p>${item.address}</p>
+                            </div>
+                        `;
+                        
+                        resultItem.addEventListener('click', () => {
+                            navigateToHeritage(item.id);
+                            resultsContainer.classList.remove('active');
+                            status.style.display = 'none';
+                            
+                            document.querySelectorAll('.heritage-item').forEach(el => {
+                                el.classList.remove('active');
+                                if(parseInt(el.getAttribute('data-id')) === item.id) {
+                                    el.classList.add('active');
+                                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                }
+                            });
+                        });
+                        
+                        resultsContainer.appendChild(resultItem);
+                    });
+                    
+                    resultsContainer.classList.add('active');
+                    status.textContent = `找到 ${results.length} 个结果`;
+                } else {
+                    resultsContainer.innerHTML = '<div class="no-results">未找到匹配的文物，请尝试其他关键词</div>';
+                    resultsContainer.classList.add('active');
+                    status.textContent = "未找到匹配的文物";
+                }
+            }, 500);
+        }
+    </script>
+</body>
+</html>
